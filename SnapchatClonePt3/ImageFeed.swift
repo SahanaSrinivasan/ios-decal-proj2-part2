@@ -61,6 +61,14 @@ func addPost(postImage: UIImage, thread: String, username: String) {
     let path = "\(firStorageImagesPath)/\(UUID().uuidString)"
     
     // YOUR CODE HERE
+    let format = DateFormatter()
+    format.dateFormat = dateFormat
+    let date = format.string(from: Date())
+    
+    let valueDictionary = [firImagePathNode: path, firThreadNode: thread, firUsernameNode: username, firDateNode: date]
+    dbRef.child(firPostsNode).childByAutoId().setValue(valueDictionary)
+    
+    store(data: data, toPath: path)
 }
 
 /*
@@ -75,6 +83,14 @@ func store(data: Data, toPath path: String) {
     let storageRef = FIRStorage.storage().reference()
     
     // YOUR CODE HERE
+    
+    storageRef.child(path).put(data, metadata: nil) {
+        (metadata, error) in
+        if let error = error {
+            print(error)
+        }
+    }
+    
 }
 
 
@@ -100,7 +116,44 @@ func getPosts(user: CurrentUser, completion: @escaping ([Post]?) -> Void) {
     var postArray: [Post] = []
     
     // YOUR CODE HERE
-}
+    dbRef.child(firPostsNode).observeSingleEvent(of: .value, with: {
+        (snapshot) in
+    if snapshot.exists() {
+        let values = snapshot.value as? [String: AnyObject]
+        user.getReadPostIDs(completion: {(readPosts) in
+            for (key, object) in values! {
+                var username = ""
+                var date = ""
+                var thread = ""
+                var path = ""
+                
+                if let DBusername = object.value(forKey: firUsernameNode) as? String {
+                    username = DBusername
+                }
+                
+                if let DBpath = object.value(forKey: firImagePathNode) as? String {
+                    path = DBpath
+                }
+                
+                if let DBthread = object.value(forKey: firThreadNode) as? String {
+                    thread = DBthread
+                }
+                
+                if let DBdate = object.value(forKey: firDateNode) as? String {
+                    date = DBdate
+                }
+                var read = readPosts.contains(key)
+                
+                let postObj = Post(id: key, username: username, postImagePath: path, thread: thread, dateString: date, read: readPosts.contains(key))
+                postArray.append(postObj)
+            }
+        
+            completion(postArray)
+        })
+    } else {
+        completion(nil)
+        }
+    })}
 
 func getDataFromPath(path: String, completion: @escaping (Data?) -> Void) {
     let storageRef = FIRStorage.storage().reference()

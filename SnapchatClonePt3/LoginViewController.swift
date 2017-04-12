@@ -29,6 +29,9 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         super.didReceiveMemoryWarning()
     }
     
+   
+    
+    
     /*
         TODO:
         
@@ -42,9 +45,25 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         guard let emailText = emailField.text else { return }
         guard let passwordText = passwordField.text else { return }
         
-        // YOUR CODE HERE
+        FIRAuth.auth()?.signIn(withEmail: emailText, password: passwordText, completion: {
+            (user, error) in
+            if let error = error {
+                let alert: UIAlertController = UIAlertController(title: "Error!", message: "Could not login", preferredStyle: UIAlertControllerStyle.alert)
+                alert.addAction(UIAlertAction(title: "Dismiss", style: .default, handler: { action in
+                    switch action.style{
+                    default:
+                        self.navigationController?.popViewController(animated: true)
+                        return
+                    }
+                }))
+                self.present(alert, animated: true, completion: nil)
+            }
+            else {
+                self.performSegue(withIdentifier: "loginToMain", sender: self)
+            }
+        })
     }
-    
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
